@@ -19,7 +19,16 @@ class StatusPage extends StatelessWidget {
             Text('ServerStatus: ${socketService.serverStatus}'),
           ],
         ),
-     ),
-   );
+      ),
+      floatingActionButton: FloatingActionButton(
+        child: Icon(Icons.message),
+        onPressed: () {
+          socketService.emit('emitir-mensaje', {
+            'nombre': 'Miguel',
+            'mensaje': 'Mensaje importante'
+          });
+        }
+      ),
+    );
   }
 }
