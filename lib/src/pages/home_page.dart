@@ -22,12 +22,13 @@ class _HomePageState extends State<HomePage> {
 
     final socketService = Provider.of<SocketService>(context, listen: false);
 
-    socketService.socket.on('bands', (payload){
-      this.bands = (payload as List).map( (band) => Band.fromMap(band) ).toList();
-      setState(() {});
-      print(payload);
-    });
+    socketService.socket.on('bands', _handleActiveBands);
     super.initState();
+  }
+
+  _handleActiveBands(dynamic payload) {
+    this.bands = (payload as List).map( (band) => Band.fromMap(band) ).toList();
+    setState(() {});
   }
 
   @override
@@ -73,9 +74,7 @@ class _HomePageState extends State<HomePage> {
 
     return Dismissible(
       direction: DismissDirection.startToEnd,
-      onDismissed: (direction) {
-        print('direction: $direction');
-      },
+      onDismissed: (_) => socketService.emit('delete-band', { 'id': band.id }),
       background: Container(
         padding: EdgeInsets.only(left: 15.0),
         color: Colors.red,
@@ -92,10 +91,7 @@ class _HomePageState extends State<HomePage> {
         ),
         title: Text(band.name),
         trailing: Text('${band.votes}'),
-        onTap: () {
-          print(band.name);
-          socketService.socket.emit('vote-band', { 'id': band.id } );
-        },
+        onTap: () => socketService.socket.emit('vote-band', { 'id': band.id } ),
       ),
     );
   }
@@ -107,57 +103,52 @@ class _HomePageState extends State<HomePage> {
     if (Platform.isAndroid) {
       return showDialog(
         context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Text('New BandName'),
-            content: TextField(
-              controller: textController,
-            ),
-            actions: [
-              MaterialButton(
-                child: Text('Add'),
-                textColor: Colors.blue,
-                onPressed: () => _addBandName(textController.text)
-              )
-            ],
-          );
-        }
+        builder: (_) => AlertDialog(
+          title: Text('New BandName'),
+          content: TextField(
+            controller: textController,
+          ),
+          actions: [
+            MaterialButton(
+              child: Text('Add'),
+              textColor: Colors.blue,
+              onPressed: () => _addBandName(textController.text)
+            )
+          ],
+        )
       );
     }
 
     showCupertinoDialog(
       context: context, 
-      builder: (_) {
-        return CupertinoAlertDialog(
-          title: Text('New Band Name'),
-          content: CupertinoTextField(
-            controller: textController,
+      builder: (_) => CupertinoAlertDialog(
+        title: Text('New Band Name'),
+        content: CupertinoTextField(
+          controller: textController,
+        ),
+        actions: [
+          CupertinoDialogAction(
+            isDefaultAction: true,
+            child: Text('Add'),
+            onPressed: () => _addBandName(textController.text)
           ),
-          actions: [
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              child: Text('Add'),
-              onPressed: () => _addBandName(textController.text)
-            ),
-            CupertinoDialogAction(
-              isDestructiveAction: true,
-              child: Text('Dismiss'),
-              onPressed: () => Navigator.pop(context)
-            )
-          ],
-        );
-      }
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            child: Text('Dismiss'),
+            onPressed: () => Navigator.pop(context)
+          )
+        ],
+      )
     );
   }
 
   void _addBandName(String name) {
-
     print(name);
 
     if (name.length > 1) {
-      //agregar banda
-      this.bands.add(new Band(id: DateTime.now().toString(), name: name, votes: 0));
-      setState(() {});
+      // Agregar banda
+      final socketService = Provider.of<SocketService>(context, listen: false);
+      socketService.emit('add-band', {'name': name});
     } 
 
     Navigator.pop(context);
