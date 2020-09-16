@@ -4,6 +4,7 @@ import 'package:band_names/src/models/band.dart';
 import 'package:band_names/src/services/socket_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:pie_chart/pie_chart.dart';
 import 'package:provider/provider.dart';
 
 
@@ -57,9 +58,18 @@ class _HomePageState extends State<HomePage> {
           )
         ],
       ),
-      body: ListView.builder(
-        itemBuilder: (context, index) => _bandTile(bands[index]),
-        itemCount: bands.length,
+      body: Column(
+        children: [
+
+          _showGraph(),
+
+          Expanded(
+            child: ListView.builder(
+              itemBuilder: (context, index) => _bandTile(bands[index]),
+              itemCount: bands.length,
+            ),
+          ),
+        ],
       ), 
       floatingActionButton: FloatingActionButton(
         onPressed: _addNewBand,
@@ -152,5 +162,22 @@ class _HomePageState extends State<HomePage> {
     } 
 
     Navigator.pop(context);
+  }
+
+  Widget _showGraph() {
+    Map<String, double> dataMap = new Map();
+
+    bands.forEach((band) {
+      dataMap.putIfAbsent(band.name, () => band.votes.toDouble());
+    });
+    
+    return Container(
+      padding: EdgeInsets.all(10.0),
+      height: 200.0,
+      child: PieChart(
+        dataMap: dataMap,
+        chartType: ChartType.ring,
+      ),
+    );
   }
 }
